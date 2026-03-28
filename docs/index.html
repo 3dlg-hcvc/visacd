@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="VisACD: Visibility-Based GPU-Accelerated Approximate Convex Decomposition">
+  <meta name="keywords" content="VisACD, visibility-based, GPU-accelerated, approximate convex decomposition">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>VisACD: Visibility-Based GPU-Accelerated Approximate Convex Decomposition</title>
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+</head>
+
+<body>
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">VisACD: Visibility-Based GPU-Accelerated Approximate Convex Decomposition</h1>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://www.linkedin.com/in/edfokin/">Egor Fokin</a><sup>1</sup>,</span>
+              <span class="author-block">
+                <a href="https://msavva.github.io/">Manolis Savva</a><sup>1</sup>,</span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>1</sup> Simon Fraser University</span>
+            </div>
+
+            <div class="is-size-4 publication-authors">
+              <span class="author-block" style="color:rgb(43, 92, 113)">EuroGraphics, 2026</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- PDF Link. -->
+                <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper (coming soon) </span>
+                </a>
+              </span>
+                <!-- Code Link. -->
+                <span class="link-block">
+                  <a href="https://github.com/3dlg-hcvc/visacd"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code (coming soon) </span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full">
+          <div class="crop_grey_line_1">
+            <img src="./visuals/teaser.png" class="interpolation-image" alt="Teaser figure.">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <!-- Abstract. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <div class="content has-text-justified">
+            <p>
+              We present <strong>VisACD</strong>, a visibility-based, GPU-accelerated algorithm for intersection-free approximate convex decomposition (ACD). The method is rotation-equivariant, making it robust to variations in input mesh orientation. Compared to prior work, <strong>VisACD</strong> produces decompositions that more closely approximate the original geometry while using fewer parts, and does so with significantly improved efficiency.
+            </p>
+            <p>
+              At the core of the approach is a concavity metric designed specifically for efficient cutting plane computation, enabling high-quality decompositions without excessive fragmentation. The algorithm is fully parallelized using NVIDIA OptiX and CUDA, allowing it to scale effectively and achieve substantial performance gains over existing methods.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="columns is-centered">
+        <div class="column">
+          <img src="./visuals/cart.gif" alt="GIF 1 representation" style="width: 100%;">
+        </div>
+        <div class="column">
+          <img src="./visuals/cow.gif" alt="GIF 2 representation" style="width: 100%;">
+        </div>
+        <div class="column">
+          <img src="./visuals/camel.gif" alt="GIF 3 representation" style="width: 100%;">
+        </div>
+      </div>
+      <!--/ Abstract. -->
+    </div>
+  </section>
+
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <!-- Method. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Method</h2>
+          <img src="./visuals/method.png" alt="Method overview" style="width: 100%; margin-bottom: 20px;">
+          <div class="content has-text-justified">
+            <p>
+              We introduce a visibility-based concavity metric that avoids expensive convex hull computations by relying solely on mesh vertices. 
+              The key idea is to define <strong>visibility edges</strong> as edges between pairs of vertices that lie outside the mesh without intersecting it. 
+              A convex mesh contains no such edges, while increasingly concave geometry produces more of them. 
+            </p>
+          
+            <p>
+              Given a mesh, we aim to find cutting planes that reduce concavity. 
+              A plane splits the mesh into two parts and removes visibility edges it intersects. 
+              This yields a simple and efficient value function: the best plane is the one that intersects the largest total length of visibility edges, making it highly interpretable and fast to evaluate.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!--/ Method. -->
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <!-- Evaluation. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Evaluation</h2>
+          <img src="./visuals/qualitative.png" alt="Qualitative Evaluation" style="width: 50%; margin-bottom: 20px;">
+          <div class="content has-text-justified">
+            <p>
+              Our method outperforms all baselines on all datasets while having lower computation time (16.97 seconds on average per PartNet-Mobility model vs 36.31 for CoACD). 
+            </p>
+          </div>
+          <img src="./visuals/evaluation.png" alt="Quantitative Evaluation" style="width: 75%; margin-bottom: 20px;">
+        </div>
+      </div>
+      <!--/ Evaluation. -->
+    </div>
+  </section>
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@inproceedings{fokin2026visacd,
+  title={VisACD: Visibility-Based GPU-Accelerated Approximate Convex Decomposition},
+  author={Fokin, Egor and Savva, Manolis},
+  booktitle={47th Annual Conference of the European Association for Computer Graphics,
+                  Eurographics 2026 - Short Papers},
+  year={2026}
+}</code></pre>
+    </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              This website is licensed under a <a rel="license"
+                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+                Commons Attribution-ShareAlike 4.0 International License</a>.
+              The template is borrowed from <a href="https://nerfies.github.io/">Nerfies</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>
