@@ -83,36 +83,6 @@ classify_and_rate_planes(const float *planes,       // [numPlanes][4]
                          float *scores,             // [numPlanes]
                          int numPlanes, int numPoints, int numEdges);
 
-void split_matrix(const vector<unsigned int> &matrix, // flattened n x n
-                  int n,                              // matrix dimension
-                  const vector<int> &indices,         // indices to select
-                  vector<unsigned int> &subset,       // output: flattened
-                  vector<unsigned int> &complement    // output: flattened
-) {
-  unordered_set<int> idx_set(indices.begin(), indices.end());
-
-  // Build subset
-  subset.clear();
-  for (int i : indices) {
-    for (int j : indices) {
-      subset.push_back(matrix[i * n + j]);
-    }
-  }
-
-  // Compute complement indices
-  vector<int> comp_indices;
-  for (int i = 0; i < n; i++)
-    if (idx_set.find(i) == idx_set.end())
-      comp_indices.push_back(i);
-
-  // Build complement
-  complement.clear();
-  for (int i : comp_indices) {
-    for (int j : comp_indices) {
-      complement.push_back(matrix[i * n + j]);
-    }
-  }
-}
 
 bool decompose_iteration(Mesh &mesh, MeshList &parts, Mesh &cage,
                          OptixDeviceContext context) {
@@ -305,31 +275,6 @@ void write_stats(std::string stats_file, double concavity, int n_parts) {
   f.close();
 }
 
-void normalize_mesh(Mesh &mesh) {
-  // Compute overall bounding box
-  Vec3D min_bb = {numeric_limits<double>::max(), numeric_limits<double>::max(),
-                  numeric_limits<double>::max()};
-  Vec3D max_bb = {numeric_limits<double>::lowest(),
-                  numeric_limits<double>::lowest(),
-                  numeric_limits<double>::lowest()};
-
-  for (auto &v : mesh.vertices) {
-    min_bb[0] = min(min_bb[0], v[0]);
-    min_bb[1] = min(min_bb[1], v[1]);
-    min_bb[2] = min(min_bb[2], v[2]);
-    max_bb[0] = max(max_bb[0], v[0]);
-    max_bb[1] = max(max_bb[1], v[1]);
-    max_bb[2] = max(max_bb[2], v[2]);
-  }
-
-  Vec3D center = (min_bb + max_bb) * 0.5;
-  double scale = 2.0 / max(max_bb[0] - min_bb[0],
-                           max(max_bb[1] - min_bb[1], max_bb[2] - min_bb[2]));
-
-  for (auto &v : mesh.vertices) {
-    v = (v - center) * scale;
-  }
-}
 
 MeshList process(Mesh mesh, double concavity, int num_parts,
                  string stats_file) {
@@ -464,42 +409,5 @@ MeshList process(Mesh mesh, double concavity, int num_parts,
     return parts;
 }
 
-
-Mesh preprocess_mesh(Mesh mesh) {
-  normalize_mesh(mesh);
-
-  Mesh original_mesh = mesh.copy();
-
-  manifold_preprocess(mesh, 30, 0.55 / 30);
-
-  if (mesh.vertices.size() > 15000){
-    mesh = original_mesh.copy();
-    manifold_preprocess(mesh, 20, 0.55 / 20);
-  }
-
-  return mesh;
-}
-
-Mesh test(Mesh &mesh){
-  OptixDeviceContext context = createContext();
-
-  Mesh cage = mesh.copy();
-  // manifold_preprocess(cage, 40, 0.03);
-
-  vector<pair<unsigned int, unsigned int>> new_intersecting_edges =
-      compute_intersection_matrix(mesh, cage, context);
-  mesh.intersecting_edges.insert(mesh.intersecting_edges.end(),
-                                 new_intersecting_edges.begin(),
-                                 new_intersecting_edges.end());
-
-  return mesh;
-}
-
-vector<Surface> get_support_surfaces(Mesh &mesh) {
-  vector<Surface> surfaces = extract_surfaces(mesh, config.support_surface_min_area);
-  cout << "Extracted " << surfaces.size() << " surfaces.\n";
-
-  return surfaces;
-}
 
 } // namespace neural_acd
