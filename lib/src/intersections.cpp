@@ -1,5 +1,7 @@
 #include <array>
 #include <core.hpp>
+#include <dlfcn.h>
+#include <filesystem>
 #include <fstream>
 #include <intersections.hpp>
 #include <math.h>
@@ -178,8 +180,17 @@ vector<unsigned int> run_optix(vector<Vec3D> vertices, vector<bool> new_mask, Me
   CUCHK(cudaFree((void *)d_temp));
 
   // --- Module / Pipeline from PTX ---
-  // Load PTX text (read file "ray_segments.ptx" into string ptx)
-  string ptx = loadPTX(string(PTX_DIR) + "/ray_segments.ptx");
+  // Find ray_segments.ptx next to the .so at runtime, fall back to build dir
+  auto get_ptx_path = []() -> string {
+    Dl_info info;
+    if (dladdr((void *)&loadPTX, &info) && info.dli_fname) {
+      auto p = filesystem::path(info.dli_fname).parent_path() / "ray_segments.ptx";
+      if (filesystem::exists(p))
+        return p.string();
+    }
+    return string(PTX_DIR) + "/ray_segments.ptx";
+  };
+  string ptx = loadPTX(get_ptx_path());
 
   OptixModule module = 0;
   OptixPipeline pipeline = 0;

@@ -3,8 +3,11 @@ import os
 import numpy as np
 import trimesh
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib/build"))
-import lib_neural_acd as lib
+try:
+    import visacd as lib
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib/build"))
+    import visacd as lib
 
 os.makedirs("out", exist_ok=True)
 
@@ -33,7 +36,7 @@ def main():
     mesh.vertices = lib.VecArray3d(vertices)
     mesh.triangles = lib.make_vecarray3i(np.array(triangles, dtype=np.int32))
 
-    parts = lib.process(mesh, concavity=0.03, num_parts=32, stats_file="out/stats.csv")
+    parts = lib.process(mesh, concavity=0.03, num_parts=32)
 
     print(f"Decomposed into {len(parts)} parts.")
 

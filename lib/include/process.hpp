@@ -6,7 +6,7 @@
 namespace neural_acd {
 
 
-MeshList process(Mesh mesh, double concavity, int num_parts,std::string stats_file);
+MeshList process(Mesh mesh, double concavity, int num_parts);
 double compute_final_concavity(MeshList &parts, MeshList &hulls);
 
 

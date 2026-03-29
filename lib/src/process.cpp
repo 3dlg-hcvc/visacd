@@ -7,20 +7,12 @@
 #include <config.hpp>
 #include <core.hpp>
 #include <cost.hpp>
-#include <fstream>
 #include <intersections.hpp>
-#include <iomanip>
-#include <iostream>
-#include <map>
 #include <optixUtils.hpp>
 #include <optix_function_table_definition.h>
 #include <postprocess.hpp>
 #include <preprocess.hpp>
 #include <process.hpp>
-#include <queue>
-#include <sstream>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <support_surface.hpp>
 
@@ -36,29 +28,29 @@ namespace neural_acd {
                        int num_planes)
   {
       vector<Plane> planes;
-  
+
       if (edges.empty())
           return planes;
-  
+
       uniform_int_distribution<> dis(0, edges.size() - 1);
       const double normal_eps = cos(5.0 * M_PI / 180.0); // ~5° angular tolerance
       const double dist_eps = 1e-3;                      // distance tolerance
-  
+
       for (int i = 0; i < num_planes * 5 && (int)planes.size() < num_planes; ++i) {
           int idx = dis(random_engine);
           Vec3D p1 = vertices[edges[idx].first];
           Vec3D p2 = vertices[edges[idx].second];
           Vec3D n = p2 - p1; // normal vector
-  
+
           if (vector_length(n) < 1e-6)
               continue;
-  
+
           n = normalize_vector(n);
           Vec3D m = (p1 + p2) * 0.5; // midpoint
           double d = -(n[0] * m[0] + n[1] * m[1] + n[2] * m[2]);
-  
+
           Plane candidate(n[0], n[1], n[2], d);
-  
+
           // check if similar to an existing plane
           bool too_similar = false;
           for (const auto &p : planes) {
@@ -68,11 +60,11 @@ namespace neural_acd {
                   break;
               }
           }
-  
+
           if (!too_similar)
               planes.push_back(candidate);
       }
-  
+
       return planes;
   }
 
@@ -92,20 +84,14 @@ bool decompose_iteration(Mesh &mesh, MeshList &parts, Mesh &cage,
   vector<Plane> planes =
       get_candidate_planes(mesh.vertices, mesh.intersecting_edges, 2500);
 
-
-  // planes.clear();
-
   int ss_offset = planes.size();
 
   for (auto &p : support_surface_planes) {
     planes.push_back(p);
   }
 
-  cout<<"Generated " << planes.size() << " candidate planes.\n";
-
   if (planes.size() == 0 || mesh.intersecting_edges.size() == 0) {
     parts.push_back(mesh);
-    cout<<planes.size()<<" candidate planes and "<<mesh.intersecting_edges.size()<<" intersecting edges, skipping decomposition.\n";
     return true;
   }
 
@@ -130,30 +116,19 @@ bool decompose_iteration(Mesh &mesh, MeshList &parts, Mesh &cage,
     h_edges[i * 2 + 1] = mesh.intersecting_edges[i].second;
   }
 
-  cout<<"Classifying and rating planes...\n";
-  cout<<n_points<<" "<<mesh.intersecting_edges.size()<<" "<<planes.size()<<"\n";
-
   vector<float> h_scores(planes.size(), 0);
   classify_and_rate_planes(h_planes.data(), h_points.data(), h_edges.data(),
                            h_scores.data(), planes.size(), n_points,
                            mesh.intersecting_edges.size());
 
-  cout<<"Plane classification and rating completed.\n";
-
   // increase all support surface scores to prioritize them
   for (int i = ss_offset; i < planes.size(); i++) {
     h_scores[i] *= config.support_surface_k;
-    // cout<<"Support surface plane score boosted to "<< h_scores[i] << "\n";
   }
 
   int best_idx =
       max_element(h_scores.begin(), h_scores.end()) - h_scores.begin();
   Plane best_plane = planes[best_idx];
-
-
-  cout << "Best plane idx: " << best_idx << " with score " <<
-  h_scores[best_idx]
-       << "\n";
 
   int *part1_map, *part2_map;
   MeshList new_parts = clip(mesh, best_plane, part1_map, part2_map);
@@ -166,19 +141,15 @@ bool decompose_iteration(Mesh &mesh, MeshList &parts, Mesh &cage,
     return false;
   }
 
-  int cur_total_edges = 0;
-
   for (auto &edge : mesh.intersecting_edges) {
     int i1 = edge.first;
     int i2 = edge.second;
 
     if (part1_map[i1] && part1_map[i2]){
-      cur_total_edges++;
       pair<int, int> new_edge = make_pair(part1_map[i1]-1, part1_map[i2]-1);
       new_parts[0].intersecting_edges.push_back(new_edge);
     }
     if (part2_map[i1] && part2_map[i2]){
-      cur_total_edges++;
       pair<int, int> new_edge = make_pair(part2_map[i1]-1, part2_map[i2]-1);
       new_parts[1].intersecting_edges.push_back(new_edge);
     }
@@ -188,8 +159,6 @@ bool decompose_iteration(Mesh &mesh, MeshList &parts, Mesh &cage,
   delete[] part2_map;
 
   separate_disjoint(new_parts);
-
-  int new_total_edges = 0;
 
   for (auto &part : new_parts) {
     if (part.vertices.size() < 10)
@@ -202,12 +171,8 @@ bool decompose_iteration(Mesh &mesh, MeshList &parts, Mesh &cage,
     part.intersecting_edges.insert(part.intersecting_edges.end(),
                                    new_intersecting_edges.begin(),
                                    new_intersecting_edges.end());
-    new_total_edges += part.intersecting_edges.size();
     parts.push_back(part);
   }
-  // ofstream f("out/intersecting_edges_stats.csv", ios::app);
-  // f << to_string(cur_total_edges) << ";" << to_string(new_total_edges) <<";"<< mesh.vertices.size() << "\n";
-  // f.close();
 
   return false;
 }
@@ -267,17 +232,7 @@ double compute_final_concavity(MeshList &parts, MeshList &cvxs) {
   return h;
 }
 
-void write_stats(std::string stats_file, double concavity, int n_parts) {
-  ofstream f(stats_file, ios::app);
-
-  f << to_string(concavity) << ";";
-  f << to_string(n_parts) << "\n";
-  f.close();
-}
-
-
-MeshList process(Mesh mesh, double concavity, int num_parts,
-                 string stats_file) {
+MeshList process(Mesh mesh, double concavity, int num_parts) {
 
   support_surface_planes.clear();
   OptixDeviceContext context = createContext();
@@ -292,43 +247,29 @@ MeshList process(Mesh mesh, double concavity, int num_parts,
     manifold_preprocess(mesh, 20, 0.55 / 20);
   }
 
-  mesh.save_obj("out/preprocessed_mesh.obj");
-
-  // manifold_preprocess(mesh, 20, 0.0); // reduce number of vertices
   Mesh cage = mesh.copy();
   manifold_preprocess(cage, 40, 0.03);
-
-  cage.save_obj("out/cage_mesh.obj");
 
   MeshList parts;
 
   if (config.use_support_surfaces) {
-    vector<Surface> surfaces = extract_surfaces(mesh,  config.support_surface_min_area);
-    cout << "Extracted " << surfaces.size() << " surfaces.\n";
+    vector<Surface> surfaces = extract_surfaces(mesh, config.support_surface_min_area);
     for (auto &S : surfaces) {
       support_surface_planes.push_back(S.plane);
     }
-  }  
+  }
 
   parts.push_back(mesh);
 
-  // parts.push_back(mesh);
-
   separate_disjoint(parts);
 
-  // return parts;
-
-
   for (auto &part : parts) {
-    cout<<part.is_new.size()<<"\n";
     vector<pair<unsigned int, unsigned int>> new_intersections =
         compute_intersection_matrix(part, cage, context);
     part.intersecting_edges.insert(part.intersecting_edges.end(),
                                    new_intersections.begin(),
                                    new_intersections.end());
   }
-
-  // return parts;
 
   for (int i = 0; i < num_parts-1; i++) {
     int part_idx = -1;
@@ -337,30 +278,18 @@ MeshList process(Mesh mesh, double concavity, int num_parts,
     else if (config.score_mode == "concavity") {
       double max_concavity = -1;
       part_idx = get_part_with_highest_concavity(parts, max_concavity);
-      cout << "Max concavity: " << max_concavity << endl;
-      if (max_concavity < concavity) {
-        cout << "Concavity threshold reached, stopping." << endl;
+      if (max_concavity < concavity)
         break;
-      }
     }
 
-    if (part_idx == -1) {
-      cout << "No valid part to decompose, stopping." << endl;
+    if (part_idx == -1)
       break;
-    }
 
     Mesh part = parts[part_idx];
-
-    // part.save_obj("part_"+to_string(i)+".obj");
-
-
     parts.erase(parts.begin() + part_idx);
     bool flag = decompose_iteration(part, parts, cage, context);
-    if (flag) {
-      cout << "No more edges, stopping" << endl;
-      // part.save_obj("final_part_"+to_string(i)+".obj");
+    if (flag)
       break;
-    }
   }
 
   MeshList hulls;
@@ -372,27 +301,10 @@ MeshList process(Mesh mesh, double concavity, int num_parts,
 
   double final_concavity = compute_final_concavity(parts, hulls);
 
-
   if (config.use_merging)
     multimerge_ch(parts, hulls, final_concavity, 0.02);
 
-
-  cout << "Final concavity: " << final_concavity << endl;
-  // multimerge_ch(parts, hulls, concavity);
-  cout << "Number of parts: " << hulls.size() << endl;
-  write_stats(stats_file, final_concavity, hulls.size());
-
-
-
   optixDeviceContextDestroy(context);
-
-  // int max_concavity_idx = get_part_with_highest_concavity(parts, concavity);
-  // // if (max_concavity_idx != -1)
-  // Mesh part = parts[max_concavity_idx];
-  // Mesh pcage = part.copy();
-  // manifold_preprocess(pcage, 40, 0.03);
-  // return vector<Mesh> {part};
-
 
   for (auto &hull : hulls) {
     hull.unnormalize(orig_bbox);
@@ -402,12 +314,10 @@ MeshList process(Mesh mesh, double concavity, int num_parts,
     part.unnormalize(orig_bbox);
   }
 
-
   if (!config.return_parts)
     return hulls;
   else
     return parts;
 }
-
 
 } // namespace neural_acd

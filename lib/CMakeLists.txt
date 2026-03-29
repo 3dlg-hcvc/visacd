@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-stringop-overflow")
 set(OPENVDB_CORE_SHARED OFF)
-set(TBB_TEST OFF)
+set(TBB_TEST OFF CACHE BOOL "" FORCE)
 
 
 
@@ -98,8 +98,11 @@ target_link_libraries(neural_acd PRIVATE optix)
 find_package(CUDA REQUIRED)
 target_include_directories(neural_acd PRIVATE ${CUDA_INCLUDE_DIRS})
 
-find_library(CUDA_DRIVER_LIBRARY cuda)
-target_link_libraries(neural_acd PRIVATE ${CUDA_LIBRARIES} ${CUDA_DRIVER_LIBRARY})
+find_library(CUDA_DRIVER_LIBRARY cuda
+    HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs
+          ${CUDA_TOOLKIT_ROOT_DIR}/targets/x86_64-linux/lib/stubs
+)
+target_link_libraries(neural_acd PRIVATE ${CUDA_LIBRARIES} ${CUDA_DRIVER_LIBRARY} dl)
 
 # -------------------------------
 # PTX Compilation (for OptiX programs)
@@ -115,7 +118,19 @@ set(PTX_SOURCES
 if(DEFINED ENV{PTX_COMPUTE})
     set(PTX_SM $ENV{PTX_COMPUTE})
 else()
-    set(PTX_SM "75")  # default if env not set
+    execute_process(
+        COMMAND nvidia-smi --query-gpu=compute_cap --format=csv,noheader
+        OUTPUT_VARIABLE _GPU_COMPUTE_CAP
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(_GPU_COMPUTE_CAP)
+        string(REPLACE "." "" PTX_SM ${_GPU_COMPUTE_CAP})
+        message(STATUS "Auto-detected GPU compute capability: ${_GPU_COMPUTE_CAP} -> sm_${PTX_SM}")
+    else()
+        set(PTX_SM "75")
+        message(STATUS "nvidia-smi not found, defaulting to sm_75")
+    endif()
 endif()
 
 foreach(ptx_src ${PTX_SOURCES})
@@ -137,8 +152,10 @@ add_dependencies(neural_acd compile_ptx)
 # -------------------------------
 # pybind11 module
 # -------------------------------
-pybind11_add_module(lib_neural_acd bindings.cpp)
-target_link_libraries(lib_neural_acd PRIVATE neural_acd)
+pybind11_add_module(visacd bindings.cpp)
+target_link_libraries(visacd PRIVATE neural_acd)
+install(TARGETS visacd DESTINATION .)
+install(FILES ${PTX_DIR}/ray_segments.ptx DESTINATION .)
 
 
 target_compile_definitions(neural_acd PRIVATE PTX_DIR="${PTX_DIR}")

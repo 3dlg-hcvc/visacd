@@ -11,7 +11,7 @@ namespace py = pybind11;
 PYBIND11_MAKE_OPAQUE(std::vector<std::array<double, 3>>);
 PYBIND11_MAKE_OPAQUE(std::vector<std::array<int, 3>>);
 
-PYBIND11_MODULE(lib_neural_acd, m)
+PYBIND11_MODULE(visacd, m)
 {
     py::bind_vector<std::vector<std::array<double, 3>>>(
         m, "VecArray3d"); // 3D vector array
@@ -65,5 +65,5 @@ PYBIND11_MODULE(lib_neural_acd, m)
         py::cast(&neural_acd::config, py::return_value_policy::reference);
 
     m.def("process", &neural_acd::process, py::arg("mesh"), py::arg("concavity"),
-          py::arg("num_parts"), py::arg("stats_file"));
+          py::arg("num_parts"));
 }
