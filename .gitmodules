@@ -1,0 +1,6 @@
+[submodule "lib/3rd/CDT"]
+	path = lib/3rd/CDT
+	url = https://github.com/artem-ogre/CDT
+[submodule "lib/3rd/qhull"]
+	path = lib/3rd/qhull
+	url = https://github.com/qhull/qhull.git
