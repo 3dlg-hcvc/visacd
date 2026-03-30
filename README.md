@@ -54,7 +54,7 @@ mesh.vertices = visacd.VecArray3d(vertices)
 mesh.triangles = visacd.make_vecarray3i(np.array(triangles, dtype=np.int32))
 
 # optionally configure
-visacd.config.score_mode = "concavity"  # or "edge"
+visacd.config.use_support_surfaces = False
 visacd.set_seed(42)
 
 # decompose

@@ -27,13 +27,7 @@ PYBIND11_MODULE(visacd, m)
 
     py::class_<neural_acd::Config>(m, "Config")
         .def(py::init<>())
-        .def_readwrite("pcd_res", &neural_acd::Config::pcd_res)
-        .def_readwrite("remesh_res", &neural_acd::Config::remesh_res)
-        .def_readwrite("remesh_threshold", &neural_acd::Config::remesh_threshold)
-        .def_readwrite("cost_rv_k", &neural_acd::Config::cost_rv_k)
         .def_readwrite("return_parts", &neural_acd::Config::return_parts)
-        .def_readwrite("separate_disjoint",
-                       &neural_acd::Config::separate_disjoint)
         .def_readwrite("score_mode", &neural_acd::Config::score_mode)
         .def_readwrite("support_surface_min_area",
                        &neural_acd::Config::support_surface_min_area)

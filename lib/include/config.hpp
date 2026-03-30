@@ -5,14 +5,7 @@
 namespace neural_acd {
 class Config {
 public:
-  int pcd_res;
-  float remesh_res;
-  float remesh_threshold;
-
-  double cost_rv_k;
-
   bool return_parts;
-  bool separate_disjoint;
 
   std::string score_mode; // "edge" or "concavity"
 
@@ -23,17 +16,9 @@ public:
   bool use_merging;
 
   Config() {
-    pcd_res = 3000;
-
-    remesh_res = 50.0f;
-    remesh_threshold = 0.05f;
-
-    cost_rv_k = 0.03;
-
     return_parts = false;
-    separate_disjoint = true;
 
-    score_mode = "edge";
+    score_mode = "concavity";
 
     support_surface_min_area = 0.1;
     use_support_surfaces = true;
