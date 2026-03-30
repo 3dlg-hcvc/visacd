@@ -43,27 +43,33 @@ pip install .
 
 ```python
 import numpy as np
+import trimesh
 import visacd
 
-# load your mesh
-vertices = ...  # list of [x, y, z]
-triangles = ... # numpy int32 array, shape (N, 3)
+# load any mesh trimesh supports
+tm = trimesh.load("mesh.obj", force="mesh")
 
 mesh = visacd.Mesh()
-mesh.vertices = visacd.VecArray3d(vertices)
-mesh.triangles = visacd.make_vecarray3i(np.array(triangles, dtype=np.int32))
+mesh.vertices = visacd.VecArray3d(tm.vertices.tolist())
+mesh.triangles = visacd.make_vecarray3i(np.array(tm.faces, dtype=np.int32))
 
 # optionally configure
-visacd.config.use_support_surfaces = False
+visacd.config.score_mode = "concavity"
 visacd.set_seed(42)
 
 # decompose
 result = visacd.process(mesh, concavity=0.04, num_parts=32)
-
 print(f"Parts: {result.num_parts}, concavity: {result.concavity:.4f}")
+
+# export as GLB
+scene = trimesh.Scene()
 for part in result.parts:
-    verts = np.array(list(part.vertices))
-    faces = np.array(list(part.triangles))
+    scene.add_geometry(trimesh.Trimesh(
+        vertices=np.array(list(part.vertices)),
+        faces=np.array(list(part.triangles)),
+        process=False,
+    ))
+scene.export("decomposition.glb")
 ```
 
 See [decompose.py](decompose.py) for a full example that loads an OBJ and exports the decomposition as a GLB.
