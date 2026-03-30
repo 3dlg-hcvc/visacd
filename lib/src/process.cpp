@@ -8,6 +8,9 @@
 #include <core.hpp>
 #include <cost.hpp>
 #include <intersections.hpp>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <optixUtils.hpp>
 #include <optix_function_table_definition.h>
 #include <postprocess.hpp>
@@ -232,12 +235,18 @@ double compute_final_concavity(MeshList &parts, MeshList &cvxs) {
   return h;
 }
 
-MeshList process(Mesh mesh, double concavity, int num_parts) {
+ProcessResult process(Mesh mesh, double concavity, int num_parts) {
+
+  auto log = [](const string &msg) {
+    cout << "[visacd] " << msg << "\n";
+    cout.flush();
+  };
 
   support_surface_planes.clear();
   OptixDeviceContext context = createContext();
   vector<double> orig_bbox = mesh.normalize();
 
+  log("Preprocessing mesh (" + to_string(mesh.vertices.size()) + " verts)...");
   Mesh original_mesh = mesh.copy();
 
   manifold_preprocess(mesh, 30, 0.55 / 30);
@@ -246,6 +255,7 @@ MeshList process(Mesh mesh, double concavity, int num_parts) {
     mesh = original_mesh.copy();
     manifold_preprocess(mesh, 20, 0.55 / 20);
   }
+  log("Remeshed to " + to_string(mesh.vertices.size()) + " verts.");
 
   Mesh cage = mesh.copy();
   manifold_preprocess(cage, 40, 0.03);
@@ -254,13 +264,12 @@ MeshList process(Mesh mesh, double concavity, int num_parts) {
 
   if (config.use_support_surfaces) {
     vector<Surface> surfaces = extract_surfaces(mesh, config.support_surface_min_area);
-    for (auto &S : surfaces) {
+    log("Detected " + to_string(surfaces.size()) + " support surface(s).");
+    for (auto &S : surfaces)
       support_surface_planes.push_back(S.plane);
-    }
   }
 
   parts.push_back(mesh);
-
   separate_disjoint(parts);
 
   for (auto &part : parts) {
@@ -271,6 +280,9 @@ MeshList process(Mesh mesh, double concavity, int num_parts) {
                                    new_intersections.end());
   }
 
+  log("Starting decomposition (max parts=" + to_string(num_parts) +
+      ", concavity threshold=" + to_string(concavity) + ", mode=" + config.score_mode + ").");
+
   for (int i = 0; i < num_parts-1; i++) {
     int part_idx = -1;
     if (config.score_mode == "edge")
@@ -278,20 +290,30 @@ MeshList process(Mesh mesh, double concavity, int num_parts) {
     else if (config.score_mode == "concavity") {
       double max_concavity = -1;
       part_idx = get_part_with_highest_concavity(parts, max_concavity);
-      if (max_concavity < concavity)
+      if (max_concavity < concavity) {
+        log("Step " + to_string(i+1) + ": concavity " +
+            to_string(max_concavity).substr(0,6) + " < threshold, stopping.");
         break;
+      }
     }
 
     if (part_idx == -1)
       break;
 
+    log("Step " + to_string(i+1) + "/" + to_string(num_parts-1) +
+        ": splitting part " + to_string(part_idx) +
+        " (" + to_string(parts.size()) + " parts total).");
+
     Mesh part = parts[part_idx];
     parts.erase(parts.begin() + part_idx);
     bool flag = decompose_iteration(part, parts, cage, context);
-    if (flag)
+    if (flag) {
+      log("No more intersecting edges, stopping early.");
       break;
+    }
   }
 
+  log("Computing convex hulls for " + to_string(parts.size()) + " parts...");
   MeshList hulls;
   for (auto &part : parts) {
     Mesh hull;
@@ -301,23 +323,27 @@ MeshList process(Mesh mesh, double concavity, int num_parts) {
 
   double final_concavity = compute_final_concavity(parts, hulls);
 
-  if (config.use_merging)
-    multimerge_ch(parts, hulls, final_concavity, 0.02);
+  if (config.use_merging) {
+    log("Merging parts...");
+    multimerge_ch(parts, hulls, final_concavity, concavity);
+  }
 
   optixDeviceContextDestroy(context);
 
-  for (auto &hull : hulls) {
+  for (auto &hull : hulls)
     hull.unnormalize(orig_bbox);
-  }
-
-  for (auto &part : parts) {
+  for (auto &part : parts)
     part.unnormalize(orig_bbox);
-  }
 
-  if (!config.return_parts)
-    return hulls;
-  else
-    return parts;
+  MeshList &output = config.return_parts ? parts : hulls;
+  int n = output.size();
+
+  ostringstream summary;
+  summary << "Done. parts=" << n
+          << "  concavity=" << fixed << setprecision(4) << final_concavity;
+  log(summary.str());
+
+  return {output, final_concavity, n};
 }
 
 } // namespace neural_acd

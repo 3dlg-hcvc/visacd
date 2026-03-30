@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CUDA_ARCHITECTURES all)
-project(neural_acd LANGUAGES CXX C CUDA)
+project(visacd LANGUAGES CXX C CUDA)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
@@ -34,15 +34,15 @@ FetchContent_MakeAvailable(eigen)
 # -------------------------------
 # Sources (exclude OptiX raygen .cu from static lib!)
 # -------------------------------
-file(GLOB neural_acd_CPP "src/*.cpp")
-file(GLOB neural_acd_CUDA "cuda/*.cu")
+file(GLOB visacd_CPP "src/*.cpp")
+file(GLOB visacd_CUDA "cuda/*.cu")
 
 # Filter out .cu files that should only be PTX (not linked)
-list(FILTER neural_acd_CUDA EXCLUDE REGEX "ray_segments.cu")
+list(FILTER visacd_CUDA EXCLUDE REGEX "ray_segments.cu")
 
-add_library(neural_acd STATIC ${neural_acd_CPP} ${neural_acd_CUDA})
+add_library(visacd_core STATIC ${visacd_CPP} ${visacd_CUDA})
 
-target_include_directories(neural_acd PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(visacd_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 # -------------------------------
 # 3rd-party libraries
@@ -56,7 +56,7 @@ target_include_directories(quickhull PUBLIC
 
 
 add_subdirectory(3rd/qhull)
-target_include_directories(neural_acd PRIVATE qhull/src)
+target_include_directories(visacd_core PRIVATE qhull/src)
 
 
 
@@ -68,11 +68,11 @@ target_include_directories(btConvexHull PUBLIC
     3rd/btConvexHull
 )
 
-target_include_directories(neural_acd PRIVATE
+target_include_directories(visacd_core PRIVATE
     3rd/CDT/CDT/include
 )
 
-target_link_libraries(neural_acd PRIVATE
+target_link_libraries(visacd_core PRIVATE
     quickhull
     btConvexHull
     openvdb_static
@@ -92,17 +92,17 @@ add_library(optix INTERFACE)
 target_include_directories(optix INTERFACE ${OptiX_INSTALL_DIR}/include)
 
 # Link it into our lib
-target_link_libraries(neural_acd PRIVATE optix)
+target_link_libraries(visacd_core PRIVATE optix)
 
 # CUDA includes
 find_package(CUDA REQUIRED)
-target_include_directories(neural_acd PRIVATE ${CUDA_INCLUDE_DIRS})
+target_include_directories(visacd_core PRIVATE ${CUDA_INCLUDE_DIRS})
 
 find_library(CUDA_DRIVER_LIBRARY cuda
     HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs
           ${CUDA_TOOLKIT_ROOT_DIR}/targets/x86_64-linux/lib/stubs
 )
-target_link_libraries(neural_acd PRIVATE ${CUDA_LIBRARIES} ${CUDA_DRIVER_LIBRARY} dl)
+target_link_libraries(visacd_core PRIVATE ${CUDA_LIBRARIES} ${CUDA_DRIVER_LIBRARY} dl)
 
 # -------------------------------
 # PTX Compilation (for OptiX programs)
@@ -147,15 +147,15 @@ foreach(ptx_src ${PTX_SOURCES})
 endforeach()
 
 add_custom_target(compile_ptx ALL DEPENDS ${PTX_FILES})
-add_dependencies(neural_acd compile_ptx)
+add_dependencies(visacd_core compile_ptx)
 
 # -------------------------------
 # pybind11 module
 # -------------------------------
 pybind11_add_module(visacd bindings.cpp)
-target_link_libraries(visacd PRIVATE neural_acd)
+target_link_libraries(visacd PRIVATE visacd_core)
 install(TARGETS visacd DESTINATION .)
 install(FILES ${PTX_DIR}/ray_segments.ptx DESTINATION .)
 
 
-target_compile_definitions(neural_acd PRIVATE PTX_DIR="${PTX_DIR}")
+target_compile_definitions(visacd_core PRIVATE PTX_DIR="${PTX_DIR}")

@@ -61,8 +61,15 @@ PYBIND11_MODULE(visacd, m)
 
     return result; });
 
+    m.def("set_seed", &neural_acd::set_seed, py::arg("seed"));
+
     m.attr("config") =
         py::cast(&neural_acd::config, py::return_value_policy::reference);
+
+    py::class_<neural_acd::ProcessResult>(m, "ProcessResult")
+        .def_readwrite("parts", &neural_acd::ProcessResult::parts)
+        .def_readwrite("concavity", &neural_acd::ProcessResult::concavity)
+        .def_readwrite("num_parts", &neural_acd::ProcessResult::num_parts);
 
     m.def("process", &neural_acd::process, py::arg("mesh"), py::arg("concavity"),
           py::arg("num_parts"));

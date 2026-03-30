@@ -36,12 +36,12 @@ def main():
     mesh.vertices = lib.VecArray3d(vertices)
     mesh.triangles = lib.make_vecarray3i(np.array(triangles, dtype=np.int32))
 
-    parts = lib.process(mesh, concavity=0.03, num_parts=32)
+    result = lib.process(mesh, concavity=0.04, num_parts=40)
 
-    print(f"Decomposed into {len(parts)} parts.")
+    print(f"Decomposed into {result.num_parts} parts (concavity={result.concavity:.4f}).")
 
     scene = trimesh.Scene()
-    for i, part in enumerate(parts):
+    for i, part in enumerate(result.parts):
         verts = np.array(list(part.vertices), dtype=np.float64)
         faces = np.array(list(part.triangles), dtype=np.int32)
         tm = trimesh.Trimesh(vertices=verts, faces=faces, process=False)
