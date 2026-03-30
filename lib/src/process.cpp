@@ -23,7 +23,7 @@ using namespace std;
 
 namespace neural_acd {
 
-  vector<Plane> support_surface_planes;
+  vector<Plane> flat_surface_planes;
 
   vector<Plane>
   get_candidate_planes(vector<Vec3D> &vertices,
@@ -89,7 +89,7 @@ bool decompose_iteration(Mesh &mesh, MeshList &parts, Mesh &cage,
 
   int ss_offset = planes.size();
 
-  for (auto &p : support_surface_planes) {
+  for (auto &p : flat_surface_planes) {
     planes.push_back(p);
   }
 
@@ -124,9 +124,9 @@ bool decompose_iteration(Mesh &mesh, MeshList &parts, Mesh &cage,
                            h_scores.data(), planes.size(), n_points,
                            mesh.intersecting_edges.size());
 
-  // increase all support surface scores to prioritize them
+  // increase all flat surface scores to prioritize them
   for (int i = ss_offset; i < planes.size(); i++) {
-    h_scores[i] *= config.support_surface_k;
+    h_scores[i] *= config.flat_surface_k;
   }
 
   int best_idx =
@@ -242,7 +242,7 @@ ProcessResult process(Mesh mesh, double concavity, int num_parts) {
     cout.flush();
   };
 
-  support_surface_planes.clear();
+  flat_surface_planes.clear();
   OptixDeviceContext context = createContext();
   vector<double> orig_bbox = mesh.normalize();
 
@@ -262,11 +262,11 @@ ProcessResult process(Mesh mesh, double concavity, int num_parts) {
 
   MeshList parts;
 
-  if (config.use_support_surfaces) {
-    vector<Surface> surfaces = extract_surfaces(mesh, config.support_surface_min_area);
-    log("Detected " + to_string(surfaces.size()) + " support surface(s).");
+  if (config.use_flat_surfaces) {
+    vector<Surface> surfaces = extract_surfaces(mesh, config.flat_surface_min_area);
+    log("Detected " + to_string(surfaces.size()) + " flat surface(s).");
     for (auto &S : surfaces)
-      support_surface_planes.push_back(S.plane);
+      flat_surface_planes.push_back(S.plane);
   }
 
   parts.push_back(mesh);

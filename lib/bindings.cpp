@@ -29,12 +29,12 @@ PYBIND11_MODULE(visacd, m)
         .def(py::init<>())
         .def_readwrite("return_parts", &neural_acd::Config::return_parts)
         .def_readwrite("score_mode", &neural_acd::Config::score_mode)
-        .def_readwrite("support_surface_min_area",
-                       &neural_acd::Config::support_surface_min_area)
-        .def_readwrite("use_support_surfaces",
-                       &neural_acd::Config::use_support_surfaces)
-        .def_readwrite("support_surface_k",
-                       &neural_acd::Config::support_surface_k)
+        .def_readwrite("flat_surface_min_area",
+                       &neural_acd::Config::flat_surface_min_area)
+        .def_readwrite("use_flat_surfaces",
+                       &neural_acd::Config::use_flat_surfaces)
+        .def_readwrite("flat_surface_k",
+                       &neural_acd::Config::flat_surface_k)
         .def_readwrite("use_merging", &neural_acd::Config::use_merging);
 
     m.def("make_vecarray3i", [](py::array_t<int> input)
