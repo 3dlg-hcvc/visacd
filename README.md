@@ -10,7 +10,7 @@ At the core of the approach is a **visibility edge** concavity metric: edges bet
 
 ## Installation
 
-**Requirements:** CUDA-capable GPU, NVIDIA OptiX 8.0, Python ≥ 3.8.
+**Requirements:** CUDA-capable GPU, NVIDIA OptiX 8.0, Python ≥ 3.8. Tested with CUDA 12.2.
 
 ### 1. Clone with submodules
 
