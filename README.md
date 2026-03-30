@@ -21,7 +21,7 @@ cd visacd
 
 ### 2. Install NVIDIA OptiX
 
-Download [OptiX 8.0](https://developer.nvidia.com/designworks/optix/download) and install it. By default the build looks for it at `$HOME/NVIDIA-OptiX-SDK-8.0.0-linux64-x86_64`. If you installed it elsewhere, set:
+Download [OptiX 8.0](https://developer.nvidia.com/designworks/optix/download) and install it, then set:
 
 ```bash
 export OptiX_INSTALL_DIR=/path/to/optix
