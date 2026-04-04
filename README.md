@@ -21,7 +21,7 @@ cd visacd
 
 ### 2. Install NVIDIA OptiX
 
-Download [OptiX 8.0](https://developer.nvidia.com/designworks/optix/download) and install it, then set:
+Download [OptiX 8.0](https://developer.nvidia.com/designworks/optix/downloads/legacy) and install it, then set (OptiX_INSTALL_DIR should contain include/ subfolder):
 
 ```bash
 export OptiX_INSTALL_DIR=/path/to/optix
@@ -81,7 +81,7 @@ See [decompose.py](decompose.py) for a full example that loads an OBJ and export
   title={VisACD: Visibility-Based GPU-Accelerated Approximate Convex Decomposition},
   author={Fokin, Egor and Savva, Manolis},
   booktitle={47th Annual Conference of the European Association for Computer Graphics,
-                  Eurographics 2026 - Short Papers},g
+                  Eurographics 2026 - Short Papers},
   year={2026}
 }
 ```
