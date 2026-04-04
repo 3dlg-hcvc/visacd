@@ -1,5 +1,24 @@
 cmake_minimum_required(VERSION 3.14)
-set(CMAKE_CUDA_ARCHITECTURES all)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+    set(CMAKE_CUDA_ARCHITECTURES native)
+elseif(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
+    set(CMAKE_CUDA_ARCHITECTURES all)
+else()
+    execute_process(
+        COMMAND nvidia-smi --query-gpu=compute_cap --format=csv,noheader
+        OUTPUT_VARIABLE _GPU_COMPUTE_CAP
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(_GPU_COMPUTE_CAP)
+        string(REPLACE "." "" _CUDA_ARCH ${_GPU_COMPUTE_CAP})
+        set(CMAKE_CUDA_ARCHITECTURES ${_CUDA_ARCH})
+        message(STATUS "Auto-detected CUDA architecture: ${_GPU_COMPUTE_CAP} -> ${_CUDA_ARCH}")
+    else()
+        set(CMAKE_CUDA_ARCHITECTURES 75)
+        message(STATUS "nvidia-smi not found, defaulting to CUDA architecture 75")
+    endif()
+endif()
 project(visacd LANGUAGES CXX C CUDA)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
