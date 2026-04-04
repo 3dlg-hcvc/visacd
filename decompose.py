@@ -12,29 +12,12 @@ except ImportError:
 os.makedirs("out", exist_ok=True)
 
 
-def load_obj(path):
-    vertices = []
-    triangles = []
-    with open(path) as f:
-        for line in f:
-            parts = line.split()
-            if not parts:
-                continue
-            if parts[0] == "v":
-                vertices.append([float(parts[1]), float(parts[2]), float(parts[3])])
-            elif parts[0] == "f":
-                # faces may be v, v/vt, or v/vt/vn — take only the vertex index
-                indices = [int(p.split("/")[0]) - 1 for p in parts[1:4]]
-                triangles.append(indices)
-    return vertices, triangles
-
-
 def main():
-    vertices, triangles = load_obj("data/cow.obj")
+    tm = trimesh.load("data/cow.obj", force="mesh")
 
     mesh = lib.Mesh()
-    mesh.vertices = lib.VecArray3d(vertices)
-    mesh.triangles = lib.make_vecarray3i(np.array(triangles, dtype=np.int32))
+    mesh.vertices = lib.VecArray3d(tm.vertices.tolist())
+    mesh.triangles = lib.make_vecarray3i(np.array(tm.faces, dtype=np.int32))
 
     result = lib.process(mesh, concavity=0.04, num_parts=40)
 
