@@ -3,11 +3,8 @@ import os
 import numpy as np
 import trimesh
 
-try:
-    import visacd as lib
-except ImportError:
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib/build"))
-    import visacd as lib
+import visacd
+
 
 os.makedirs("out", exist_ok=True)
 
@@ -15,11 +12,11 @@ os.makedirs("out", exist_ok=True)
 def main():
     tm = trimesh.load("data/cow.obj", force="mesh")
 
-    mesh = lib.Mesh()
-    mesh.vertices = lib.VecArray3d(tm.vertices.tolist())
-    mesh.triangles = lib.make_vecarray3i(np.array(tm.faces, dtype=np.int32))
+    mesh = visacd.Mesh()
+    mesh.vertices = visacd.VecArray3d(tm.vertices.tolist())
+    mesh.triangles = visacd.make_vecarray3i(np.array(tm.faces, dtype=np.int32))
 
-    result = lib.process(mesh, concavity=0.04, num_parts=40)
+    result = visacd.process(mesh, concavity=0.04, num_parts=40)
 
     print(f"Decomposed into {result.num_parts} parts (concavity={result.concavity:.4f}).")
 
