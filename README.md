@@ -1,6 +1,6 @@
 # VisACD: Visibility-Based GPU-Accelerated Approximate Convex Decomposition
 
-[Project Page](https://3dlg-hcvc.github.io/visacd) | Paper (coming soon)
+[Project Page](https://3dlg-hcvc.github.io/visacd) | [Paper](https://arxiv.org/abs/2604.04244)
 
 ![Teaser](docs/visuals/teaser.png)
 
