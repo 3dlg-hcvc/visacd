@@ -6,7 +6,7 @@
 
 VisACD is a visibility-based, GPU-accelerated algorithm for intersection-free approximate convex decomposition (ACD). It is rotation-equivariant, making it robust to variations in input mesh orientation. Compared to prior work, VisACD produces decompositions that more closely approximate the original geometry while using fewer parts, and does so with significantly improved efficiency.
 
-At the core of the approach is a **visibility edge** concavity metric: edges between pairs of vertices that lie outside the mesh without intersecting it. A convex mesh contains no such edges, while increasingly concave geometry produces more. The best cutting plane is the one that intersects the largest total length of visibility edges — simple, efficient, and interpretable. The algorithm is fully parallelized using NVIDIA OptiX and CUDA.
+At the core of the approach is a **visibility edge** concavity metric: edges between pairs of vertices that lie outside the mesh without intersecting it. A convex mesh contains no such edges, while increasingly concave geometry produces more. The best cutting plane is the one that intersects the largest total length of visihttps://3dlg-hcvc.github.io/visacd/bility edges — simple, efficient, and interpretable. The algorithm is fully parallelized using NVIDIA OptiX and CUDA.
 
 ## Installation
 
