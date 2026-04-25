@@ -72,7 +72,27 @@ for part in result.parts:
 scene.export("decomposition.glb")
 ```
 
-See [decompose.py](decompose.py) for a full example that loads an OBJ and exports the decomposition as a GLB.
+## decompose.py
+
+[decompose.py](decompose.py) is a ready-to-use CLI script:
+
+```bash
+# Output written to <mesh_name>_decomposed.glb next to the input file
+python decompose.py data/cow.obj
+
+# Custom output path
+python decompose.py data/cow.obj -o out/cow_decomposed.glb
+
+# Tune decomposition parameters
+python decompose.py data/cow.obj --concavity 0.02 --num-parts 64
+```
+
+| Argument | Default | Description |
+|---|---|---|
+| `mesh` | — | Path to input mesh (any format trimesh supports) |
+| `-o / --output` | `<mesh_name>_decomposed.glb` | Output GLB path |
+| `--concavity` | `0.04` | Maximum concavity threshold |
+| `--num-parts` | `40` | Maximum number of output parts |
 
 ## Citation
 
